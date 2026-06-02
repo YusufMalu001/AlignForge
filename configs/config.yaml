@@ -1,0 +1,25 @@
+project_name: "AlignForge"
+seed: 42
+model_name: "Qwen/Qwen2-0.5B-Instruct"
+dataset_name: "Anthropic/hh-rlhf"
+num_train_samples: 500
+num_eval_samples: 50
+
+# LoRA Config
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+
+# Training Config
+learning_rate: 5.0e-5
+num_epochs: 1
+max_length: 256
+batch_size: 1
+gradient_accumulation_steps: 4
+save_strategy: "steps"
+save_steps: 50
+
+# DPO Config
+beta: 0.1
+
+output_dir: "./results"
