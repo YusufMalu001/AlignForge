@@ -9,6 +9,8 @@ from typing import Dict, Any, Optional
 import random
 import numpy as np
 import torch
+os.environ["WANDB_DISABLED"] = "true" 
+os.environ["WANDB_MODE"] = "disabled"
 
 def set_seed(seed: int = 42) -> None:
     """Ensures deterministic reproducibility."""
@@ -23,15 +25,26 @@ def init_tracking(project_name: str, job_type: str, config: Dict[str, Any]) -> N
     """
     set_seed(config.get('seed', 42))
     
-    if not os.environ.get("WANDB_API_KEY"):
-        print("WANDB_API_KEY not found. W&B logging is disabled or will prompt.")
+    # Skip W&B entirely
+    if os.environ.get("WANDB_DISABLED") == "true": 
+        print("W&B disabled. Using local logging only.") 
+        return
+
+    try: 
+        import wandb
+
+        wandb.init( 
+        project=project_name, 
+        job_type=job_type, 
+        config=config, 
+        resume="allow" 
+        )
+
+        print("W&B initialized successfully.") 
     
-    wandb.init(
-        project=project_name,
-        job_type=job_type,
-        config=config,
-        resume="allow"
-    )
+    except Exception as e: 
+        print(f"W&B initialization failed: {e}") 
+        print("Continuing with local logging only.")
 
 def log_metrics(metrics: Dict[str, Any], step: Optional[int] = None) -> None:
     """

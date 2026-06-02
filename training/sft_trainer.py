@@ -31,30 +31,29 @@ def run_sft(resume_from_checkpoint: bool = False, max_samples: int = None):
     output_dir = Path(config['output_dir']) / "sft_checkpoint"
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    training_args = SFTConfig(
-        output_dir=str(output_dir),
-        learning_rate=float(config['learning_rate']),
-        num_train_epochs=config['num_epochs'],
-        per_device_train_batch_size=config['batch_size'],
-        gradient_accumulation_steps=config['gradient_accumulation_steps'],
-        save_strategy=config['save_strategy'],
-        save_steps=config['save_steps'],
-        logging_steps=10,
-        eval_strategy="steps",
-        eval_steps=config['save_steps'],
-        seed=config['seed'],
-        report_to="wandb",
+    training_args = SFTConfig( 
+        output_dir=str(output_dir), 
+        learning_rate=float(config['learning_rate']), 
+        num_train_epochs=config['num_epochs'], 
+        per_device_train_batch_size=config['batch_size'], 
+        gradient_accumulation_steps=config['gradient_accumulation_steps'], 
+        save_strategy=config['save_strategy'], save_steps=config['save_steps'], 
+        logging_steps=10, eval_strategy="steps", eval_steps=config['save_steps'], 
+        seed=config['seed'], 
+        report_to="none", # disable wandb 
+        fp16=False, 
+        bf16=False, 
         max_seq_length=config['max_length'],
         dataset_text_field="text"
-    )
-    
-    trainer = SFTTrainer(
-        model=model,
-        train_dataset=train_ds,
-        eval_dataset=eval_ds,
-        tokenizer=tokenizer,
-        args=training_args,
-    )
+        ) 
+
+    trainer = SFTTrainer( 
+        model=model, 
+        train_dataset=train_ds, 
+        eval_dataset=eval_ds, 
+        processing_class=tokenizer, 
+        args=training_args, 
+        )
     
     logger.info("Starting SFT training...")
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)

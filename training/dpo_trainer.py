@@ -80,7 +80,10 @@ def run_dpo(resume_from_checkpoint: bool = False, max_samples: int = None):
         eval_strategy="steps",
         eval_steps=config['save_steps'],
         seed=config['seed'],
-        report_to="wandb",
+        report_to="none",
+        use_cpu=True,
+        fp16=False,
+        bf16=False,
         max_prompt_length=config['max_length'] // 2,
         max_length=config['max_length']
     )
@@ -90,7 +93,7 @@ def run_dpo(resume_from_checkpoint: bool = False, max_samples: int = None):
         ref_model=ref_model,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         args=training_args,
     )
     

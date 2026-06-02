@@ -1,6 +1,8 @@
 """
 CLI entrypoint for SFT.
 """
+import os
+os.environ["PYTHONUTF8"] = "1"
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
