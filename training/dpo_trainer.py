@@ -1,23 +1,37 @@
 """
-Stage 2: Direct Preference Optimization (DPO) with TRL.
+Stage 3: Direct Preference Optimization (DPO) with TRL.
 """
 import argparse
 from pathlib import Path
 import logging
-import torch
-import copy
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import PeftModel, LoraConfig, get_peft_model
+
 from trl import DPOTrainer, DPOConfig
 
 from tracking.logger import init_tracking, load_config, finish_tracking
 from data.loader import prepare_dataset
+from data.formatting import UnifiedFormatter
+from models.base_loader import get_model_and_tokenizer
+from utils.reproducibility import set_seed, snapshot_experiment
+from utils.checkpoint_manager import CheckpointManager
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
+def preprocess_function(examples, tokenizer):
+    formatter = UnifiedFormatter(tokenizer)
+    new_examples = {"prompt": [], "chosen": [], "rejected": []}
+    for p, c, r in zip(examples["prompt"], examples["chosen"], examples["rejected"]):
+        fmt = formatter.format_dpo(p, c, r)
+        new_examples["prompt"].append(fmt["prompt"])
+        new_examples["chosen"].append(fmt["chosen"])
+        new_examples["rejected"].append(fmt["rejected"])
+    return new_examples
+
 def run_dpo(resume_from_checkpoint: bool = False, max_samples: int = None):
     config = load_config()
+    set_seed(config.get("seed", 42))
+    snapshot_experiment(config, "dpo_training")
+    
     if max_samples is not None:
         config['num_train_samples'] = max_samples
         config['num_eval_samples'] = min(config.get('num_eval_samples', 50), max_samples)
@@ -26,49 +40,27 @@ def run_dpo(resume_from_checkpoint: bool = False, max_samples: int = None):
     
     train_ds, eval_ds = prepare_dataset(config)
     
-    sft_checkpoint_path = str(Path(config['output_dir']) / "sft_checkpoint")
-    
-    tokenizer = AutoTokenizer.from_pretrained(config['model_name'], trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    logger.info("Loading base model...")
-    base_model = AutoModelForCausalLM.from_pretrained(
-        config['model_name'],
-        torch_dtype=torch.float32,
-        device_map="cpu",
-        trust_remote_code=True
-    )
-    
-    if Path(sft_checkpoint_path).exists():
-        logger.info(f"Merging SFT adapters from {sft_checkpoint_path}")
-        base_model = PeftModel.from_pretrained(base_model, sft_checkpoint_path).merge_and_unload()
-    else:
-        logger.warning("No SFT checkpoint found! Using base model for DPO.")
-
-    logger.info("Creating reference model...")
-    ref_model = copy.deepcopy(base_model)
-    ref_model.eval()
-    for param in ref_model.parameters():
-        param.requires_grad = False
+    sft_checkpoint_path = Path(config['output_dir']) / "sft_checkpoint"
+    ckpt_path = str(sft_checkpoint_path) if (sft_checkpoint_path / "adapter_config.json").exists() else None
         
-    logger.info("Applying LoRA for DPO policy model...")
-    peft_config = LoraConfig(
-        r=config.get('lora_r', 8),
-        lora_alpha=config.get('lora_alpha', 16),
-        lora_dropout=config.get('lora_dropout', 0.05),
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=["q_proj", "v_proj"]
+    # Load model with PEFT adapters applied directly.
+    # We DO NOT create a ref_model here, TRL DPOTrainer natively handles `model.disable_adapter()`
+    # saving massive amounts of RAM (1x model instead of 2x models).
+    model, tokenizer = get_model_and_tokenizer(
+        config['model_name'], 
+        lora_config=config,
+        is_trainable=True,
+        checkpoint_path=ckpt_path
     )
-    policy_model = get_peft_model(base_model, peft_config)
-    policy_model.print_trainable_parameters()
     
-    output_dir = Path(config['output_dir']) / "dpo_checkpoint"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    train_ds = train_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True)
+    eval_ds = eval_ds.map(lambda x: preprocess_function(x, tokenizer), batched=True)
+    
+    output_dir = str(Path(config['output_dir']) / "dpo_checkpoint")
+    ckpt_manager = CheckpointManager(config['output_dir'])
     
     training_args = DPOConfig(
-        output_dir=str(output_dir),
+        output_dir=output_dir,
         beta=config['beta'],
         learning_rate=float(config['learning_rate']),
         num_train_epochs=config['num_epochs'],
@@ -82,26 +74,23 @@ def run_dpo(resume_from_checkpoint: bool = False, max_samples: int = None):
         seed=config['seed'],
         report_to="none",
         use_cpu=True,
-        fp16=False,
-        bf16=False,
         max_prompt_length=config['max_length'] // 2,
         max_length=config['max_length']
     )
     
+    # ref_model is explicitly None to trigger automatic PEFT reference handling
     trainer = DPOTrainer(
-        model=policy_model,
-        ref_model=ref_model,
+        model=model,
+        ref_model=None,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
         processing_class=tokenizer,
         args=training_args,
     )
     
-    logger.info("Starting DPO training...")
-    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-    
-    logger.info(f"Saving final DPO checkpoint to {output_dir}")
-    trainer.save_model(str(output_dir))
+    logger.info("Starting DPO training (with built-in adapter switching)...")
+    ckpt_manager.resume_training(trainer, output_dir, force_resume=resume_from_checkpoint)
+    ckpt_manager.save_checkpoint(trainer, output_dir, "final_dpo_checkpoint")
     finish_tracking()
 
 if __name__ == "__main__":

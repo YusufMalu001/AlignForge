@@ -1,0 +1,9 @@
+# Formatting rules for different stages
+sft:
+  format: "prompt_chosen_eos"
+reward:
+  format: "prompt_chosen_and_prompt_rejected"
+dpo:
+  format: "prompt_chosen_rejected_dict"
+eval:
+  format: "prompt_only"
