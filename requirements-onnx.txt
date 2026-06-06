@@ -1,0 +1,4 @@
+optimum
+onnx
+onnxruntime
+# onnxruntime-gpu # Optional for GPU deployment

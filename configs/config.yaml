@@ -23,3 +23,22 @@ save_steps: 50
 beta: 0.1
 
 output_dir: "./results"
+
+# --- Research Expansion Additions ---
+
+# Benchmark Tiers: "smoke_test" (10 samples) or "publishable" (500+ samples)
+benchmark_tier: "smoke_test"
+
+# Pluggable LLM-as-a-Judge Configuration
+judge:
+  type: "local" # options: local, openai, openai_compatible
+  
+  local:
+    model: "Qwen/Qwen2-0.5B-Instruct"
+    
+  openai:
+    model: "gpt-4o-mini"
+    
+  openai_compatible:
+    base_url: ""
+    api_key: ""
