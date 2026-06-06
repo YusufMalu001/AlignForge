@@ -91,6 +91,6 @@ Please refer to the [Executive Summary](docs/EXECUTIVE_SUMMARY.md) and [Research
 
 | Reward Debiasing | Win Rate & Efficiency |
 | :---: | :---: |
-| ![Reward vs Length (Before)](results/publication_figures/reward_vs_length_before.png) <br> *Baseline RM (Severe Length Bias)* | ![Win Rate Comparison](results/publication_figures/win_rate_comparison.png) <br> *Win Rate vs SFT (N=500)* |
-| ![Reward vs Length (After)](results/publication_figures/reward_vs_length_after.png) <br> *Debiased RM (Bias Neutralized)* | ![Resource Efficiency](results/publication_figures/resource_efficiency.png) <br> *Training Time and RAM Usage* |
-| ![Ablation Significance](results/publication_figures/ablation_significance.png) <br> *Ablation Study (Impact of Debiasing)* | ![Failure Comparison](results/publication_figures/failure_comparison.png) <br> *Failure Modes per 500 prompts* |
+| ![Reward vs Length (Before)](assets/reward_vs_length_before.png) <br> *Baseline RM (Severe Length Bias)* | ![Win Rate Comparison](assets/win_rate_comparison.png) <br> *Win Rate vs SFT (N=500)* |
+| ![Reward vs Length (After)](assets/reward_vs_length_after.png) <br> *Debiased RM (Bias Neutralized)* | ![Resource Efficiency](assets/resource_efficiency.png) <br> *Training Time and RAM Usage* |
+| ![Ablation Significance](assets/ablation_significance.png) <br> *Ablation Study (Impact of Debiasing)* | ![Failure Comparison](assets/failure_comparison.png) <br> *Failure Modes per 500 prompts* |
