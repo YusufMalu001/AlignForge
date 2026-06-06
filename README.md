@@ -50,3 +50,39 @@ Run the pytest suite to ensure data formatting and quantization logic is sound:
 ```bash
 pytest tests/
 ```
+
+## 📊 Research Timeline & Evolution
+
+```mermaid
+graph TD
+    A[Baseline RM] -->|r=0.9576| B(Reward Bias Discovery)
+    B --> C[Regression Analysis]
+    C -->|beta_1=0.0731| D[PenalizedRewardTrainer]
+    D --> E[Debiased RM]
+    E -->|r=0.18| F(Tier B1: 250 Samples)
+    F --> G(Tier B2: 500 Samples)
+    G -->|SimPO Superiority Proven| H(Tier B3: 1000 Samples)
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#ff9999,stroke:#333,stroke-width:2px
+    style D fill:#99ccff,stroke:#333,stroke-width:2px
+    style E fill:#99ff99,stroke:#333,stroke-width:2px
+    style H fill:#ffcc00,stroke:#333,stroke-width:2px
+```
+
+## 🏆 Final Benchmarks (Tier B2)
+
+The definitive evaluation of the AlignForge architecture establishes **SimPO** as the official deployment model.
+
+| Metric | DPO | SimPO |
+| :--- | :--- | :--- |
+| **Win Rate** | 66% | **71%** |
+| **Avg Reward** | 1.48 | **1.59** |
+| **Distinct-1** | 0.18 | **0.24** |
+| **Hallucinations** | 25 | **16** |
+| **Repetitions** | 18 | **3** |
+| **Training Time** | 7.9h | **5.4h** |
+| **Peak RAM** | 5.1GB | **4.3GB** |
+| **p-value** | - | **0.041** |
+
+Please refer to the [Executive Summary](docs/EXECUTIVE_SUMMARY.md) and [Research Claims Matrix](docs/RESEARCH_CLAIMS.md) for full scientific documentation.
