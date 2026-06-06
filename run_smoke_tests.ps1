@@ -20,8 +20,12 @@ Write-Host "Running ORPO..."
 python scripts/run_orpo.py
 if ($LASTEXITCODE -ne 0) { throw "ORPO failed" }
 
+Write-Host "Running SimPO..."
+python scripts/run_simpo.py
+if ($LASTEXITCODE -ne 0) { throw "SimPO failed" }
+
 Write-Host "Running Evaluation..."
-python scripts/run_eval.py --models base,sft,dpo,orpo
+python scripts/run_eval.py --models base,sft,dpo,orpo,simpo
 if ($LASTEXITCODE -ne 0) { throw "Eval failed" }
 
 Write-Host "All smoke tests completed successfully!"

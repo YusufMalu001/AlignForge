@@ -24,6 +24,15 @@ beta: 0.1
 
 output_dir: "./results"
 
+# --- Advanced Alignment Configurations ---
+
+# SimPO (Simple Preference Optimization)
+simpo:
+  beta: 1.0 # 1.0 for Tier A, 2.0 for Tier B
+  gamma_beta_ratio: 0.5
+  learning_rate: 5e-5
+  num_epochs: 1
+
 # --- Research Expansion Additions ---
 
 # Benchmark Tiers: "smoke_test" (10 samples) or "publishable" (500+ samples)
