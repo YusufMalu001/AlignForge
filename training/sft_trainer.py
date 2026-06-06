@@ -42,7 +42,9 @@ def run_sft(resume_from_checkpoint: bool = False, max_samples: int = None):
         seed=config['seed'], 
         report_to="none", # disable wandb 
         fp16=False, 
-        bf16=False
+        bf16=False,
+        dataset_text_field="text",
+        max_length=config['max_length']
         ) 
 
     trainer = SFTTrainer( 

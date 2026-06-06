@@ -1,4 +1,4 @@
-# AlignForge 🚀
+# AlignForge
 
 AlignForge is a complete, production-grade 100% local RLHF (Reinforcement Learning from Human Feedback) fine-tuning pipeline for Large Language Models. Built for CPU and limited GPU environments, it demonstrates end-to-end alignment using Anthropic's `hh-rlhf` dataset.
 
