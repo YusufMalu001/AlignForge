@@ -76,7 +76,6 @@ def run_simpo(resume_from_checkpoint: bool = False, max_samples: int = None):
         output_dir=output_dir,
         beta=beta,
         loss_type="simpo",
-        simpo_gamma=gamma, # Critical for SimPO length-normalized margin
         learning_rate=lr,
         num_train_epochs=epochs,
         per_device_train_batch_size=config['batch_size'],
@@ -89,7 +88,6 @@ def run_simpo(resume_from_checkpoint: bool = False, max_samples: int = None):
         seed=config['seed'],
         report_to="none",
         use_cpu=True,
-        max_prompt_length=config['max_length'] // 2,
         max_length=config['max_length']
     )
     

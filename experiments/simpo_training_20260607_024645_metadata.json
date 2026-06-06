@@ -1,0 +1,52 @@
+{
+    "run_id": "simpo_training_20260607_024645",
+    "stage": "simpo_training",
+    "timestamp": "20260607_024645",
+    "git_commit": "b2ed44177461c7aff98f1b90d577bc2635236b3d",
+    "model_name": "Qwen/Qwen2-0.5B-Instruct",
+    "dataset": "Anthropic/hh-rlhf",
+    "seed": 42,
+    "learning_rate": 5e-05,
+    "batch_size": 1,
+    "lora_rank": 8,
+    "config_snapshot": {
+        "project_name": "AlignForge",
+        "seed": 42,
+        "model_name": "Qwen/Qwen2-0.5B-Instruct",
+        "dataset_name": "Anthropic/hh-rlhf",
+        "num_train_samples": 500,
+        "num_eval_samples": 50,
+        "lora_r": 8,
+        "lora_alpha": 16,
+        "lora_dropout": 0.05,
+        "learning_rate": 5e-05,
+        "num_epochs": 1,
+        "max_length": 256,
+        "batch_size": 1,
+        "gradient_accumulation_steps": 4,
+        "save_strategy": "steps",
+        "save_steps": 50,
+        "beta": 0.1,
+        "output_dir": "./results",
+        "simpo": {
+            "beta": 1.0,
+            "gamma_beta_ratio": 0.5,
+            "learning_rate": "5e-5",
+            "num_epochs": 1
+        },
+        "benchmark_tier": "smoke_test",
+        "judge": {
+            "type": "local",
+            "local": {
+                "model": "Qwen/Qwen2-0.5B-Instruct"
+            },
+            "openai": {
+                "model": "gpt-4o-mini"
+            },
+            "openai_compatible": {
+                "base_url": "",
+                "api_key": ""
+            }
+        }
+    }
+}
