@@ -51,7 +51,7 @@ Run the pytest suite to ensure data formatting and quantization logic is sound:
 pytest tests/
 ```
 
-## 📊 Research Timeline & Evolution
+##  Research Timeline & Evolution
 
 ```mermaid
 graph TD
@@ -70,7 +70,7 @@ graph TD
     style H fill:#ffcc00,stroke:#333,stroke-width:2px
 ```
 
-## 🏆 Final Benchmarks (Tier B2)
+##  Final Benchmarks (Tier B2)
 
 The definitive evaluation of the AlignForge architecture establishes **SimPO** as the official deployment model.
 
