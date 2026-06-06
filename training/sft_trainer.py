@@ -42,9 +42,7 @@ def run_sft(resume_from_checkpoint: bool = False, max_samples: int = None):
         seed=config['seed'], 
         report_to="none", # disable wandb 
         fp16=False, 
-        bf16=False, 
-        max_seq_length=config['max_length'],
-        dataset_text_field="text"
+        bf16=False
         ) 
 
     trainer = SFTTrainer( 
@@ -52,7 +50,7 @@ def run_sft(resume_from_checkpoint: bool = False, max_samples: int = None):
         train_dataset=train_ds, 
         eval_dataset=eval_ds, 
         processing_class=tokenizer, 
-        args=training_args, 
+        args=training_args
         )
     
     logger.info("Starting SFT training...")

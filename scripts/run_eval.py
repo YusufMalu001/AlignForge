@@ -1,25 +1,22 @@
-"""
-CLI entrypoint for Evaluation (Generation + Judging + Metrics).
-"""
-import os
-os.environ["PYTHONUTF8"] = "1"
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
-
 import argparse
-from evaluation.evaluator import run_evaluation
-from evaluation.reward_eval import run_reward_eval
-from evaluation.metrics import run_metrics
+import logging
+from tracking.logger import load_config
 
-def run_all():
-    print("Step 1: Running generation on evaluation prompts...")
-    run_evaluation()
-    print("Step 2: Scoring responses with Local Reward Model...")
-    run_reward_eval()
-    print("Step 3: Computing final metrics...")
-    run_metrics()
-    print("Evaluation pipeline complete!")
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
 
+def run_multi_eval(models_list: list):
+    logger.info(f"Running multi-model evaluation for: {models_list}")
+    # Placeholder for the actual evaluation logic
+    # Real implementation would load dataset, generate responses for each model,
+    # evaluate pairwise with Judge, and output leaderboard + significance_report.json
+    
+    logger.info("Evaluation pipeline skeleton ready.")
+    
 if __name__ == "__main__":
-    run_all()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--models", type=str, required=True, help="Comma separated list of models e.g., base,sft,dpo,orpo")
+    args = parser.parse_args()
+    
+    models = [m.strip() for m in args.models.split(',')]
+    run_multi_eval(models)
