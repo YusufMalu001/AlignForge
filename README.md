@@ -1,26 +1,13 @@
-# AlignForge 
+# AlignForge 🚀
 
-AlignForge is a complete, production-grade 100% local RLHF (Reinforcement Learning from Human Feedback) fine-tuning pipeline for Large Language Models. Built for a CPU-compatible environment, this project demonstrates end-to-end alignment using the Anthropic `hh-rlhf` dataset without any external API dependencies.
+AlignForge is a complete, production-grade 100% local RLHF (Reinforcement Learning from Human Feedback) fine-tuning pipeline for Large Language Models. Built for CPU and limited GPU environments, it demonstrates end-to-end alignment using Anthropic's `hh-rlhf` dataset.
 
-## Architecture
-
-```text
-Anthropic HH-RLHF (Chosen/Rejected)
-          ↓
-  Stage 1: Supervised Fine-Tuning (SFT)
-  (Policy Model Base)
-          ↓
-  Stage 2: Reward Model Training (RM)
-  (Local sequence classification judge)
-          ↓
-  Stage 3: Direct Preference Optimization (DPO)
-  (Optimizes preference margin over frozen SFT)
-          ↓
-  Stage 4: Automated Evaluation
-  (Dynamic INT8 Quantization + Local RM Scoring)
-          ↓
-  Streamlit Dashboard
-```
+## Features
+- **4-Stage Pipeline**: SFT -> Reward Modeling -> DPO -> Evaluation.
+- **Strict Dataset Validation**: Pre-flight checks prevent malformed data from poisoning training.
+- **Memory Optimized**: Employs TRL's built-in reference model adapter-switching to cut DPO memory usage by 50%.
+- **CPU Inference Acceleration**: PyTorch Dynamic INT8 Quantization on Linear layers for fast evaluation.
+- **Scientific Reproducibility**: Built-in deterministic seeds, config snapshotting, and experiment registry.
 
 ## Setup Instructions
 
@@ -30,62 +17,36 @@ Anthropic HH-RLHF (Chosen/Rejected)
    ```
 
 2. **Configure Environment:**
-   Copy `.env.example` to `.env` and fill in your W&B key for tracking.
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Adjust Hyperparameters (Optional):**
-   Edit `configs/config.yaml` to change model, batch size, learning rate, or sample size.
+   Copy `.env.example` to `.env`.
 
 ## How to Run
 
-The pipeline is split into four modular stages. Each script supports a `--resume` flag to safely restart from the last checkpoint.
-
 ### 1. Supervised Fine-Tuning (SFT)
-Trains the base model on chosen responses to learn the preferred format.
+Trains the base model on chosen responses to learn formatting.
 ```bash
 python scripts/run_sft.py
 ```
 
 ### 2. Reward Model Training (RM)
-Trains a local sequence classification model on the chosen/rejected pairs to predict human preference scores.
+Trains a sequence classification model to score human preference.
 ```bash
 python scripts/run_rm.py
 ```
 
 ### 3. Direct Preference Optimization (DPO)
-Uses the SFT model as a frozen reference and trains a new policy via LoRA to maximize preference margins directly.
+Optimizes the policy model via LoRA to maximize preference margin against the frozen reference.
 ```bash
 python scripts/run_dpo.py
 ```
 
 ### 4. Automated Evaluation
-Generates responses from both the baseline and DPO models, scores them using the local Reward Model, and calculates key metrics.
+Generates benchmark reports, calculating win rates, reward gains, and sequence diversity.
 ```bash
 python scripts/run_eval.py
 ```
 
-### 5. Dashboard
-Launch the interactive Streamlit dashboard to explore reward distributions, loss curves, and sample outputs side-by-side.
+## Testing
+Run the pytest suite to ensure data formatting and quantization logic is sound:
 ```bash
-streamlit run dashboard/app.py
+pytest tests/
 ```
-
-## Results Benchmark
-
-| Metric | Value |
-|--------|-------|
-| Win Rate | TBD |
-| Avg Reward Gain | TBD |
-| Avg Baseline Reward | TBD |
-| Avg DPO Reward | TBD |
-| Avg Response Length (baseline) | TBD |
-| Avg Response Length (DPO) | TBD |
-| Vocab Diversity (baseline) | TBD |
-| Vocab Diversity (DPO) | TBD |
-| Repetition Score (baseline) | TBD |
-| Repetition Score (DPO) | TBD |
-
----
-*Note on CPU Training: Training even 500 samples on a CPU is computationally intensive. The pipeline uses small LoRA ranks, a batch size of 1 with gradient accumulation, and frequent checkpointing (default every 50 steps) to ensure progress isn't lost if interrupted.*
