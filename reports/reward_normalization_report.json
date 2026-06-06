@@ -1,0 +1,5 @@
+{
+    "reward_mean": 0.02,
+    "reward_std": 1.05,
+    "normalized_variance": 1.1
+}

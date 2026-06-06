@@ -2,6 +2,7 @@ import json
 import logging
 import numpy as np
 from scipy import stats
+import matplotlib.pyplot as plt
 from pathlib import Path
 import argparse
 
@@ -57,6 +58,26 @@ def run_reward_bias_analysis(judgments_file: str, output_dir: str):
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(out_dir / "reward_bias_report.json", "w") as f:
         json.dump(report, f, indent=4)
+        
+    # Generate Plot
+    plt.figure(figsize=(10, 6))
+    plt.scatter(lengths, rewards, alpha=0.6, edgecolors='k')
+    
+    # Add trendline
+    z = np.polyfit(lengths, rewards, 1)
+    p = np.poly1d(z)
+    plt.plot(lengths, p(lengths), "r--", alpha=0.8, label=f"Trendline (r={pearson_r:.2f})")
+    
+    plt.title("Reward Bias Analysis: Reward vs. Response Length")
+    plt.xlabel("Response Length (words)")
+    plt.ylabel("Reward Score")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    plot_path = out_dir / "reward_vs_length.png"
+    plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+    logger.info(f"Saved plot to {plot_path}")
+    plt.close()
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

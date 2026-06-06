@@ -1,0 +1,7 @@
+{
+    "Pairwise Accuracy": 66.8,
+    "Validation Loss": 0.45,
+    "Reward Margin": 0.85,
+    "Reward Variance": 0.22,
+    "Calibration Metrics": 0.94
+}

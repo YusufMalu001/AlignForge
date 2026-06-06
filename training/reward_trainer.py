@@ -62,6 +62,8 @@ def preprocess_function(examples, tokenizer, max_length):
         "attention_mask_chosen": [],
         "input_ids_rejected": [],
         "attention_mask_rejected": [],
+        "chosen_length": [],
+        "rejected_length": [],
     }
     
     for p, c, r in zip(examples["prompt"], examples["chosen"], examples["rejected"]):
@@ -75,8 +77,56 @@ def preprocess_function(examples, tokenizer, max_length):
         new_examples["attention_mask_chosen"].append(tokenized_chosen["attention_mask"])
         new_examples["input_ids_rejected"].append(tokenized_rejected["input_ids"])
         new_examples["attention_mask_rejected"].append(tokenized_rejected["attention_mask"])
+        
+        # Count non-padding tokens
+        new_examples["chosen_length"].append(sum(tokenized_chosen["attention_mask"]))
+        new_examples["rejected_length"].append(sum(tokenized_rejected["attention_mask"]))
 
     return new_examples
+
+import torch.nn as nn
+import json
+
+class PenalizedRewardTrainer(RewardTrainer):
+    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        # Load beta_1 dynamically
+        beta_1 = 0.0
+        try:
+            with open("reports/reward_length_regression.json", "r") as f:
+                beta_1 = json.load(f).get("beta_1", 0.0)
+        except Exception:
+            pass
+            
+        # Get standard outputs
+        outputs = model(
+            input_ids=inputs.get("input_ids_chosen"),
+            attention_mask=inputs.get("attention_mask_chosen"),
+            return_dict=True,
+        )
+        chosen_rewards = outputs.logits
+        
+        outputs_rejected = model(
+            input_ids=inputs.get("input_ids_rejected"),
+            attention_mask=inputs.get("attention_mask_rejected"),
+            return_dict=True,
+        )
+        rejected_rewards = outputs_rejected.logits
+        
+        margin = chosen_rewards - rejected_rewards
+        
+        # Calculate length bias penalty
+        if "chosen_length" in inputs and "rejected_length" in inputs:
+            chosen_len = inputs["chosen_length"]
+            rejected_len = inputs["rejected_length"]
+            length_bias = beta_1 * (chosen_len - rejected_len).to(margin.device, dtype=margin.dtype)
+            margin = margin - length_bias
+            
+        loss = -nn.functional.logsigmoid(margin).mean()
+        
+        if return_outputs:
+            # Reconstruct format TRL expects for metrics
+            return loss, (chosen_rewards, rejected_rewards)
+        return loss
 
 def run_rm(resume_from_checkpoint: bool = False, max_samples: int = None):
     config = load_config()
@@ -104,7 +154,18 @@ def run_rm(resume_from_checkpoint: bool = False, max_samples: int = None):
     train_ds = train_ds.map(lambda x: preprocess_function(x, tokenizer, config['max_length']), batched=True, remove_columns=train_ds.column_names)
     eval_ds = eval_ds.map(lambda x: preprocess_function(x, tokenizer, config['max_length']), batched=True, remove_columns=eval_ds.column_names)
     
-    output_dir = str(Path(config['output_dir']) / "rm_checkpoint")
+    # Check if we should use debiased pipeline (if beta_1 > 0 in reports)
+    use_debiased = False
+    try:
+        with open("reports/reward_length_regression.json", "r") as f:
+            beta_1 = json.load(f).get("beta_1", 0.0)
+            if beta_1 > 0:
+                use_debiased = True
+    except Exception:
+        pass
+        
+    output_dir_name = "debiased_rm_checkpoint" if use_debiased else "rm_checkpoint"
+    output_dir = str(Path(config['output_dir']) / output_dir_name)
     ckpt_manager = CheckpointManager(config['output_dir'])
     
     training_args = RewardConfig(
@@ -122,9 +183,11 @@ def run_rm(resume_from_checkpoint: bool = False, max_samples: int = None):
         report_to="none",
         use_cpu=True,
         max_length=config['max_length'],
+        center_rewards_coefficient=0.01
     )
     
-    trainer = RewardTrainer(
+    TrainerClass = PenalizedRewardTrainer if use_debiased else RewardTrainer
+    trainer = TrainerClass(
         model=model,
         args=training_args,
         train_dataset=train_ds,
